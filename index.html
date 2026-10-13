@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Retirement & Mortgage Simulator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+--bg: #0f172a;
+--card: #1e293b;
+--border: #334155;
+--text: #f8fafc;
+--muted: #94a3b8;
+--primary: #38bdf8;
+--cons: #f87171;
+--base: #38bdf8;
+--bull: #4ade80;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { background: var(--bg); color: var(--text); padding: 16px; -webkit-tap-highlight-color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 4px; }
+p.subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 12px; }
+.chart-container { position: relative; height: 380px; width: 100%; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.control-group { background: #0f172a80; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.control-header { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; }
+.control-label { color: var(--muted); }
+.control-val { font-weight: 600; color: var(--text); }
+input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 8px; }
+.stat-card { background: #0f172a80; border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+.stat-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; }
+.stat-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="card">
+<h1>Lifetime Wealth & Mortgage Simulator</h1>
+<p class="subtitle">Values in real purchasing power (net of inflation). Horizon to Age 110.</p>
+<div class="chart-container">
+<canvas id="chart"></canvas>
+</div>
+<div class="summary-grid">
+<div class="stat-card">
+<div class="stat-label">Peak Wealth at 60 (Base)</div>
+<div class="stat-value" id="kpiPeak">-</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Conservative Depletion</div>
+<div class="stat-value" id="kpiDepCons">-</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Base Case Runway</div>
+<div class="stat-value" id="kpiDepBase">-</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Real Pension (Age 67+)</div>
+<div class="stat-value" id="kpiPension">-</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="grid">
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Retirement Age</span>
+<span class="control-val" id="valRetireAge">60</span>
+</div>
+<input type="range" id="retireAge" min="50" max="70" step="1" value="60">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Desired Net Income (today's €)</span>
+<span class="control-val" id="valMonthlyDraw">€3,000</span>
+</div>
+<input type="range" id="monthlyDraw" min="1500" max="6000" step="100" value="3000">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Monthly Savings (to 2042)</span>
+<span class="control-val" id="valMonthlySavings">€1,500</span>
+</div>
+<input type="range" id="monthlySavings" min="500" max="4000" step="100" value="1500">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">2042 Mortgage Payoff</span>
+<span class="control-val" id="valPayMortgage">Yes</span>
+</div>
+<input type="range" id="payMortgage" min="0" max="1" step="1" value="1">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Savings After 2042 Payoff</span>
+<span class="control-val" id="valPostSavings">€2,200</span>
+</div>
+<input type="range" id="postSavings" min="1000" max="5000" step="100" value="2200">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Nominal Annual Pension (at 67)</span>
+<span class="control-val" id="valAnnualPension">€18,000</span>
+</div>
+<input type="range" id="annualPension" min="0" max="36000" step="1000" value="18000">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Capital Gains Tax</span>
+<span class="control-val" id="valTaxRate">25%</span>
+</div>
+<input type="range" id="taxRate" min="0" max="35" step="1" value="25">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Annual Inflation Rate</span>
+<span class="control-val" id="valInflation">2.0%</span>
+</div>
+<input type="range" id="inflation" min="0" max="5" step="0.5" value="2">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Conservative Return (Gross)</span>
+<span class="control-val" id="valRCons">4.0%</span>
+</div>
+<input type="range" id="rCons" min="1" max="6" step="0.5" value="4">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Base Case Return (Gross)</span>
+<span class="control-val" id="valRBase">6.5%</span>
+</div>
+<input type="range" id="rBase" min="3" max="9" step="0.5" value="6.5">
+</div>
+
+<div class="control-group">
+<div class="control-header">
+<span class="control-label">Bull Case Return (Gross)</span>
+<span class="control-val" id="valRBull">8.5%</span>
+</div>
+<input type="range" id="rBull" min="5" max="12" step="0.5" value="8.5">
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const startAge = 37;
+const initialBalance = 150000;
+const payoffElapsedYears = 16;
+const totalHorizonYears = 73;
+
+const elements = [
+'retireAge', 'monthlyDraw', 'monthlySavings', 'payMortgage',
+'postSavings', 'annualPension', 'taxRate', 'inflation',
+'rCons', 'rBase', 'rBull'
+];
+
+const ctx = document.getElementById('chart').getContext('2d');
+const chart = new Chart(ctx, {
+type: 'line',
+data: {
+labels: Array.from({ length: totalHorizonYears + 1 }, (_, i) => `Age ${startAge + i}`),
+datasets: [
+{ label: 'Conservative', borderColor: '#f87171', borderWidth: 2, pointRadius: 0, fill: false, data: [] },
+{ label: 'Base Case', borderColor: '#38bdf8', borderWidth: 2.5, pointRadius: 0, fill: false, data: [] },
+{ label: 'Bull Case', borderColor: '#4ade80', borderWidth: 2, pointRadius: 0, fill: false, data: [] }
+]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+interaction: { mode: 'index', intersect: false },
+scales: {
+x: {
+grid: { color: '#33415540' },
+ticks: { color: '#94a3b8', maxTicksLimit: 12 }
+},
+y: {
+grid: { color: '#33415540' },
+ticks: {
+color: '#94a3b8',
+callback: val => '€' + (val >= 1e6 ? (val / 1e6).toFixed(1) + 'M' : Math.round(val / 1e3) + 'k')
+},
+min: 0
+}
+},
+plugins: {
+legend: { labels: { color: '#f8fafc', font: { size: 12 } } },
+tooltip: {
+callbacks: {
+label: ctx => `${ctx.dataset.label}: €${Math.round(ctx.raw).toLocaleString('de-DE')}`
+}
+}
+}
+}
+});
+
+function calculateCurve(grossRate, p) {
+const netNominal = (grossRate / 100) * (1 - p.taxRate / 100);
+const r = Math.max(0.001, netNominal - (p.inflation / 100));
+const accumYears = Math.max(1, p.retireAge - startAge);
+const realDebt = 182000 / Math.pow(1 + p.inflation / 100, payoffElapsedYears);
+const grossSale = realDebt * (1 + (p.taxRate / 100) * 0.25);
+const discountYears = Math.max(67 - startAge, p.retireAge - startAge);
+const realPensionAt67 = p.annualPension / Math.pow(1 + p.inflation / 100, discountYears);
+
+let bal = initialBalance;
+const trajectory = [bal];
+
+for (let t = 1; t <= totalHorizonYears; t++) {
+const age = startAge + t;
+if (t <= accumYears) {
+const currentMonthly = (t > payoffElapsedYears && p.payMortgage === 1) ? p.postSavings : p.monthlySavings;
+bal = bal * (1 + r) + currentMonthly * 12;
+if (t === payoffElapsedYears && p.payMortgage === 1) {
+bal = Math.max(0, bal - grossSale);
+}
+} else {
+const pensionIncome = age >= 67 ? realPensionAt67 : 0;
+const netWithdrawal = Math.max(0, p.monthlyDraw * 12 - pensionIncome);
+bal = Math.max(0, bal * (1 + r) - netWithdrawal);
+}
+trajectory.push(bal);
+}
+return trajectory;
+}
+
+function update() {
+const p = {
+retireAge: parseInt(document.getElementById('retireAge').value),
+monthlyDraw: parseInt(document.getElementById('monthlyDraw').value),
+monthlySavings: parseInt(document.getElementById('monthlySavings').value),
+payMortgage: parseInt(document.getElementById('payMortgage').value),
+postSavings: parseInt(document.getElementById('postSavings').value),
+annualPension: parseInt(document.getElementById('annualPension').value),
+taxRate: parseFloat(document.getElementById('taxRate').value),
+inflation: parseFloat(document.getElementById('inflation').value),
+rCons: parseFloat(document.getElementById('rCons').value),
+rBase: parseFloat(document.getElementById('rBase').value),
+rBull: parseFloat(document.getElementById('rBull').value)
+};
+
+document.getElementById('valRetireAge').textContent = p.retireAge;
+document.getElementById('valMonthlyDraw').textContent = '€' + p.monthlyDraw.toLocaleString('de-DE');
+document.getElementById('valMonthlySavings').textContent = '€' + p.monthlySavings.toLocaleString('de-DE');
+document.getElementById('valPayMortgage').textContent = p.payMortgage === 1 ? 'Yes' : 'No';
+document.getElementById('valPostSavings').textContent = '€' + p.postSavings.toLocaleString('de-DE');
+document.getElementById('valAnnualPension').textContent = '€' + p.annualPension.toLocaleString('de-DE');
+document.getElementById('valTaxRate').textContent = p.taxRate + '%';
+document.getElementById('valInflation').textContent = p.inflation.toFixed(1) + '%';
+document.getElementById('valRCons').textContent = p.rCons.toFixed(1) + '%';
+document.getElementById('valRBase').textContent = p.rBase.toFixed(1) + '%';
+document.getElementById('valRBull').textContent = p.rBull.toFixed(1) + '%';
+
+const curveCons = calculateCurve(p.rCons, p);
+const curveBase = calculateCurve(p.rBase, p);
+const curveBull = calculateCurve(p.rBull, p);
+
+chart.data.datasets[0].data = curveCons;
+chart.data.datasets[1].data = curveBase;
+chart.data.datasets[2].data = curveBull;
+chart.update('none');
+
+const peakAgeIdx = p.retireAge - startAge;
+document.getElementById('kpiPeak').textContent = '€' + Math.round(curveBase[peakAgeIdx]).toLocaleString('de-DE');
+
+const depConsIdx = curveCons.findIndex((val, idx) => idx > peakAgeIdx && val <= 0);
+document.getElementById('kpiDepCons').textContent = depConsIdx !== -1 ? `Age ${startAge + depConsIdx}` : '> 110';
+
+const depBaseIdx = curveBase.findIndex((val, idx) => idx > peakAgeIdx && val <= 0);
+document.getElementById('kpiDepBase').textContent = depBaseIdx !== -1 ? `Age ${startAge + depBaseIdx}` : 'Safe > 110';
+
+const discountYears = Math.max(67 - startAge, p.retireAge - startAge);
+const realPensionMonthly = Math.round((p.annualPension / Math.pow(1 + p.inflation / 100, discountYears)) / 12);
+document.getElementById('kpiPension').textContent = `€${realPensionMonthly.toLocaleString('de-DE')} / mo`;
+}
+
+elements.forEach(id => document.getElementById(id).addEventListener('input', update));
+update();
+</script>
+</body>
+</html>
