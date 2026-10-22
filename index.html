@@ -1,296 +1,456 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Retirement & Mortgage Simulator</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Revengers - Session 013 3D Diorama</title>
 <style>
-:root {
---bg: #0f172a;
---card: #1e293b;
---border: #334155;
---text: #f8fafc;
---muted: #94a3b8;
---primary: #38bdf8;
---cons: #f87171;
---base: #38bdf8;
---bull: #4ade80;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-body { background: var(--bg); color: var(--text); padding: 16px; -webkit-tap-highlight-color: transparent; }
-.container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 4px; }
-p.subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 12px; }
-.chart-container { position: relative; height: 380px; width: 100%; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.control-group { background: #0f172a80; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-.control-header { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; }
-.control-label { color: var(--muted); }
-.control-val { font-weight: 600; color: var(--text); }
-input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer; }
-.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 8px; }
-.stat-card { background: #0f172a80; border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
-.stat-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 2px; }
-.stat-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #090a0f;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #eee;
+  }
+  #ui {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(15, 18, 26, 0.85);
+    border: 1px solid #3a445e;
+    border-radius: 10px;
+    padding: 14px 18px;
+    max-width: 320px;
+    backdrop-filter: blur(6px);
+    z-index: 10;
+  }
+  #ui h1 {
+    margin: 0 0 6px 0;
+    font-size: 18px;
+    color: #ff9d42;
+    letter-spacing: 0.5px;
+  }
+  #ui p {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #b8c2d9;
+  }
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  button {
+    background: #ff6a00;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+  }
+  button:hover {
+    background: #ff852e;
+  }
+  button.secondary {
+    background: #2b3347;
+  }
+  button.secondary:hover {
+    background: #3d4863;
+  }
+  .label {
+    position: absolute;
+    background: rgba(10, 12, 18, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+    white-space: nowrap;
+    z-index: 5;
+  }
 </style>
 </head>
 <body>
-<div class="container">
-<div class="card">
-<h1>Lifetime Wealth & Mortgage Simulator</h1>
-<p class="subtitle">Values in real purchasing power (net of inflation). Horizon to Age 110.</p>
-<div class="chart-container">
-<canvas id="chart"></canvas>
-</div>
-<div class="summary-grid">
-<div class="stat-card">
-<div class="stat-label">Peak Wealth at 60 (Base)</div>
-<div class="stat-value" id="kpiPeak">-</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Conservative Depletion</div>
-<div class="stat-value" id="kpiDepCons">-</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Base Case Runway</div>
-<div class="stat-value" id="kpiDepBase">-</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Real Pension (Age 67+)</div>
-<div class="stat-value" id="kpiPension">-</div>
-</div>
-</div>
+
+<div id="ui">
+  <h1>Sitzung 013: Unter Maras</h1>
+  <p>Drehen: Linksklick / 1 Finger<br>Zoomen: Mausrad / 2 Finger<br>Verschieben: Rechtsklick</p>
+  <div class="btn-group">
+    <button id="throwBtn">Warhammer schleudern!</button>
+    <button id="toggleLabelsBtn" class="secondary">Labels an/aus</button>
+  </div>
 </div>
 
-<div class="card">
-<div class="grid">
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Retirement Age</span>
-<span class="control-val" id="valRetireAge">60</span>
-</div>
-<input type="range" id="retireAge" min="50" max="70" step="1" value="60">
-</div>
+<div id="labels"></div>
 
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Desired Net Income (today's €)</span>
-<span class="control-val" id="valMonthlyDraw">€3,000</span>
-</div>
-<input type="range" id="monthlyDraw" min="1500" max="6000" step="100" value="3000">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Monthly Savings (to 2042)</span>
-<span class="control-val" id="valMonthlySavings">€1,500</span>
-</div>
-<input type="range" id="monthlySavings" min="500" max="4000" step="100" value="1500">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">2042 Mortgage Payoff</span>
-<span class="control-val" id="valPayMortgage">Yes</span>
-</div>
-<input type="range" id="payMortgage" min="0" max="1" step="1" value="1">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Savings After 2042 Payoff</span>
-<span class="control-val" id="valPostSavings">€2,200</span>
-</div>
-<input type="range" id="postSavings" min="1000" max="5000" step="100" value="2200">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Nominal Annual Pension (at 67)</span>
-<span class="control-val" id="valAnnualPension">€18,000</span>
-</div>
-<input type="range" id="annualPension" min="0" max="36000" step="1000" value="18000">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Capital Gains Tax</span>
-<span class="control-val" id="valTaxRate">25%</span>
-</div>
-<input type="range" id="taxRate" min="0" max="35" step="1" value="25">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Annual Inflation Rate</span>
-<span class="control-val" id="valInflation">2.0%</span>
-</div>
-<input type="range" id="inflation" min="0" max="5" step="0.5" value="2">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Conservative Return (Gross)</span>
-<span class="control-val" id="valRCons">4.0%</span>
-</div>
-<input type="range" id="rCons" min="1" max="6" step="0.5" value="4">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Base Case Return (Gross)</span>
-<span class="control-val" id="valRBase">6.5%</span>
-</div>
-<input type="range" id="rBase" min="3" max="9" step="0.5" value="6.5">
-</div>
-
-<div class="control-group">
-<div class="control-header">
-<span class="control-label">Bull Case Return (Gross)</span>
-<span class="control-val" id="valRBull">8.5%</span>
-</div>
-<input type="range" id="rBull" min="5" max="12" step="0.5" value="8.5">
-</div>
-</div>
-</div>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-const startAge = 37;
-const initialBalance = 150000;
-const payoffElapsedYears = 16;
-const totalHorizonYears = 73;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x090a0f);
+scene.fog = new THREE.FogExp2(0x090a0f, 0.025);
 
-const elements = [
-'retireAge', 'monthlyDraw', 'monthlySavings', 'payMortgage',
-'postSavings', 'annualPension', 'taxRate', 'inflation',
-'rCons', 'rBase', 'rBull'
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 150);
+camera.position.set(0, 12, 22);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 5, 0);
+controls.enableDamping = true;
+
+const ambientLight = new THREE.AmbientLight(0x2a324b, 0.9);
+scene.add(ambientLight);
+
+const baseGeo = new THREE.CylinderGeometry(11, 11.5, 1.2, 48);
+const stoneMat = new THREE.MeshStandardMaterial({ color: 0x2a2d34, roughness: 0.9 });
+const baseMesh = new THREE.Mesh(baseGeo, stoneMat);
+baseMesh.position.y = -0.6;
+baseMesh.receiveShadow = true;
+scene.add(baseMesh);
+
+const sewerWaterGeo = new THREE.CylinderGeometry(10.6, 10.6, 0.2, 48);
+const sewerWaterMat = new THREE.MeshStandardMaterial({
+  color: 0x1e381f,
+  emissive: 0x0b1f0d,
+  roughness: 0.2,
+  metalness: 0.3
+});
+const sewerWater = new THREE.Mesh(sewerWaterGeo, sewerWaterMat);
+sewerWater.position.y = 0.05;
+scene.add(sewerWater);
+
+const marbleMat = new THREE.MeshStandardMaterial({
+  color: 0xf2f4f8,
+  roughness: 0.15,
+  metalness: 0.1
+});
+const marblePillar = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 12, 48), marbleMat);
+marblePillar.position.set(0, 6, -4.5);
+marblePillar.castShadow = true;
+marblePillar.receiveShadow = true;
+scene.add(marblePillar);
+
+const ceilingGeo = new THREE.CylinderGeometry(11, 11, 0.9, 48);
+const ceilingMesh = new THREE.Mesh(ceilingGeo, stoneMat);
+ceilingMesh.position.y = 12.2;
+scene.add(ceilingMesh);
+
+const holeGeo = new THREE.CylinderGeometry(1.4, 1.4, 1.1, 24);
+const holeMat = new THREE.MeshBasicMaterial({ color: 0x020305 });
+const holeMesh = new THREE.Mesh(holeGeo, holeMat);
+holeMesh.position.set(-2.2, 12.1, -0.5);
+scene.add(holeMesh);
+
+const pylonGroup = new THREE.Group();
+const pylonMat = new THREE.MeshStandardMaterial({
+  color: 0x4fd2ff,
+  emissive: 0x1ca3ec,
+  emissiveIntensity: 0.8,
+  roughness: 0.2
+});
+for (let i = 0; i < 4; i++) {
+  const angle = (i / 4) * Math.PI - Math.PI * 0.12;
+  const px = Math.cos(angle) * 4.3;
+  const pz = -4.5 + Math.sin(angle) * 4.3;
+  const pylon = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), pylonMat);
+  pylon.position.set(px, 2.2, pz);
+  pylonGroup.add(pylon);
+}
+scene.add(pylonGroup);
+
+const barrierGeo = new THREE.TorusGeometry(4.3, 0.06, 16, 64);
+const barrierMat = new THREE.MeshBasicMaterial({ color: 0x4fd2ff, transparent: true, opacity: 0.5 });
+const barrierRing = new THREE.Mesh(barrierGeo, barrierMat);
+barrierRing.rotation.x = Math.PI / 2;
+barrierRing.position.set(0, 2.2, -4.5);
+scene.add(barrierRing);
+
+const iceMat = new THREE.MeshStandardMaterial({
+  color: 0x88e8ff,
+  emissive: 0x166888,
+  transparent: true,
+  opacity: 0.82,
+  roughness: 0.1
+});
+const iceSpike = new THREE.Mesh(new THREE.ConeGeometry(1.1, 8.2, 7), iceMat);
+iceSpike.position.set(-2.2, 4.1, -0.5);
+scene.add(iceSpike);
+
+const iceLight = new THREE.PointLight(0x55d8ff, 1.2, 10);
+iceLight.position.set(-2.2, 6, -0.5);
+scene.add(iceLight);
+
+const morvaneGroup = new THREE.Group();
+const leatherMat = new THREE.MeshStandardMaterial({ color: 0x6b1d24, roughness: 0.6 });
+const skinMat = new THREE.MeshStandardMaterial({ color: 0xb9bac4, roughness: 0.5 });
+const morvaneBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 1.3, 12), leatherMat);
+morvaneBody.position.y = 0.65;
+const morvaneHead = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), skinMat);
+morvaneHead.position.y = 1.5;
+morvaneGroup.add(morvaneBody, morvaneHead);
+morvaneGroup.position.set(-2.2, 8.1, -0.5);
+scene.add(morvaneGroup);
+
+const hatiGroup = new THREE.Group();
+const robeMat = new THREE.MeshStandardMaterial({ color: 0x621b8a, roughness: 0.7 });
+const goblinMat = new THREE.MeshStandardMaterial({ color: 0x8f4496, roughness: 0.5 });
+const hatiBody = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.1, 12), robeMat);
+hatiBody.position.y = 0.55;
+const hatiHead = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), goblinMat);
+hatiHead.position.y = 1.25;
+const thirdEye = new THREE.Mesh(
+  new THREE.SphereGeometry(0.06, 8, 8),
+  new THREE.MeshBasicMaterial({ color: 0xffd000 })
+);
+thirdEye.position.set(0, 1.33, 0.24);
+hatiGroup.add(hatiBody, hatiHead, thirdEye);
+hatiGroup.position.set(-4.8, 0.1, 2.2);
+scene.add(hatiGroup);
+
+const mageHandGroup = new THREE.Group();
+const ghostMat = new THREE.MeshStandardMaterial({
+  color: 0xb95cff,
+  emissive: 0x8019cc,
+  transparent: true,
+  opacity: 0.75
+});
+const palm = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.18), ghostMat);
+mageHandGroup.add(palm);
+for (let i = -1; i <= 1; i++) {
+  const finger = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 8), ghostMat);
+  finger.position.set(i * 0.14, 0.35, 0);
+  mageHandGroup.add(finger);
+}
+mageHandGroup.position.set(-1.3, 10.6, -0.5);
+scene.add(mageHandGroup);
+
+const mageLight = new THREE.PointLight(0xb95cff, 1.2, 8);
+mageLight.position.copy(mageHandGroup.position);
+scene.add(mageLight);
+
+const spinDuoGroup = new THREE.Group();
+spinDuoGroup.position.set(0.8, 0.1, 2.0);
+scene.add(spinDuoGroup);
+
+const spinRingGeo = new THREE.TorusGeometry(1.75, 0.05, 12, 48);
+const spinRingMat = new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.65 });
+const spinRing = new THREE.Mesh(spinRingGeo, spinRingMat);
+spinRing.rotation.x = Math.PI / 2;
+spinRing.position.y = 1.0;
+spinDuoGroup.add(spinRing);
+
+const azraelGroup = new THREE.Group();
+const suitMat = new THREE.MeshStandardMaterial({ color: 0x1c1d24, roughness: 0.6 });
+const azBody = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.5, 12), suitMat);
+azBody.position.y = 0.75;
+const azHead = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), new THREE.MeshStandardMaterial({ color: 0xd9a98c }));
+azHead.position.y = 1.7;
+const wingGeo = new THREE.BoxGeometry(1.4, 1.6, 0.1);
+const wingMat = new THREE.MeshStandardMaterial({ color: 0x0d0e12, roughness: 0.8 });
+const leftWing = new THREE.Mesh(wingGeo, wingMat);
+leftWing.position.set(-0.7, 1.2, -0.25);
+leftWing.rotation.z = 0.35;
+leftWing.rotation.y = 0.3;
+const rightWing = new THREE.Mesh(wingGeo, wingMat);
+rightWing.position.set(0.7, 1.2, -0.25);
+rightWing.rotation.z = -0.35;
+rightWing.rotation.y = -0.3;
+
+const flameMat = new THREE.MeshStandardMaterial({
+  color: 0xffaa00,
+  emissive: 0xff4500,
+  emissiveIntensity: 1.5
+});
+const flameSword = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.4, 0.12), flameMat);
+flameSword.position.set(-0.55, 1.2, 0.4);
+flameSword.rotation.x = 0.5;
+
+azraelGroup.add(azBody, azHead, leftWing, rightWing, flameSword);
+azraelGroup.position.set(-1.1, 0, 0);
+spinDuoGroup.add(azraelGroup);
+
+const sulGorzGroup = new THREE.Group();
+const orcMat = new THREE.MeshStandardMaterial({ color: 0x3b6333, roughness: 0.6 });
+const orcBody = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.45, 1.75, 12), orcMat);
+orcBody.position.y = 0.88;
+const orcHead = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 16), orcMat);
+orcHead.position.y = 1.95;
+sulGorzGroup.add(orcBody, orcHead);
+sulGorzGroup.position.set(1.1, 0, 0);
+spinDuoGroup.add(sulGorzGroup);
+
+const warhammerGroup = new THREE.Group();
+const handle = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.06, 0.06, 1.3, 8),
+  new THREE.MeshStandardMaterial({ color: 0x5c3a21 })
+);
+const hammerHead = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.38, 0.38), flameMat);
+hammerHead.position.y = 0.65;
+warhammerGroup.add(handle, hammerHead);
+warhammerGroup.position.set(0, 1.5, 1.3);
+spinDuoGroup.add(warhammerGroup);
+
+const fireLight = new THREE.PointLight(0xff6600, 2.2, 14);
+fireLight.position.set(0.8, 2.5, 2.0);
+scene.add(fireLight);
+
+function createAcidBug(x, z, rotY) {
+  const bug = new THREE.Group();
+  const shellMat = new THREE.MeshStandardMaterial({ color: 0x222b1d, roughness: 0.3, metalness: 0.4 });
+  const acidMat = new THREE.MeshStandardMaterial({
+    color: 0x5eff00,
+    emissive: 0x3bd600,
+    emissiveIntensity: 1.1
+  });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.95, 16, 12), shellMat);
+  body.scale.set(1.0, 0.6, 1.45);
+  body.position.y = 0.6;
+  const acidBack = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), acidMat);
+  acidBack.position.set(0, 0.95, -0.2);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), shellMat);
+  head.position.set(0, 0.5, 1.25);
+  bug.add(body, acidBack, head);
+
+  const puddle = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.08, 24), acidMat);
+  puddle.position.y = 0.06;
+  bug.add(puddle);
+
+  bug.position.set(x, 0.1, z);
+  bug.rotation.y = rotY;
+  scene.add(bug);
+  return bug;
+}
+
+const bug1 = createAcidBug(4.5, 1.4, -0.9);
+const bug2 = createAcidBug(3.2, -2.0, -0.4);
+
+const acidLight = new THREE.PointLight(0x5eff00, 1.5, 11);
+acidLight.position.set(4.0, 1.5, 0.0);
+scene.add(acidLight);
+
+const rolfGroup = new THREE.Group();
+const ribbitMat = new THREE.MeshStandardMaterial({ color: 0x517a4c, roughness: 0.7 });
+const rolfBody = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 14), ribbitMat);
+rolfBody.position.y = 0.42;
+const pinkRock = new THREE.Mesh(
+  new THREE.DodecahedronGeometry(0.24, 0),
+  new THREE.MeshStandardMaterial({ color: 0xff47b5, emissive: 0x8f145d })
+);
+pinkRock.position.set(0, 0.25, 0.55);
+rolfGroup.add(rolfBody, pinkRock);
+rolfGroup.position.set(-7.2, 0.1, 5.5);
+rolfGroup.rotation.y = 0.7;
+scene.add(rolfGroup);
+
+const labelData = [
+  { text: "Marmorsäule & Magische Pylonen", pos: new THREE.Vector3(0, 6.2, -4.5) },
+  { text: "Morvane auf Hatis Ice Spike", pos: new THREE.Vector3(-2.2, 10.1, -0.5) },
+  { text: "Fluchtloch zur Zelle", pos: new THREE.Vector3(-2.2, 12.6, -0.5) },
+  { text: "Hati (mit Will)", pos: new THREE.Vector3(-4.8, 2.1, 2.2) },
+  { text: "Wills Geisterhand", pos: new THREE.Vector3(-1.3, 11.4, -0.5) },
+  { text: "Azrael & Sul-Gorz (Zentrifugalkraft)", pos: new THREE.Vector3(0.8, 3.1, 2.0) },
+  { text: "Ätzende Säurekäfer", pos: new THREE.Vector3(4.2, 2.2, 0.2) },
+  { text: "Rolf & der pinke Stein", pos: new THREE.Vector3(-7.2, 1.4, 5.5) }
 ];
 
-const ctx = document.getElementById('chart').getContext('2d');
-const chart = new Chart(ctx, {
-type: 'line',
-data: {
-labels: Array.from({ length: totalHorizonYears + 1 }, (_, i) => `Age ${startAge + i}`),
-datasets: [
-{ label: 'Conservative', borderColor: '#f87171', borderWidth: 2, pointRadius: 0, fill: false, data: [] },
-{ label: 'Base Case', borderColor: '#38bdf8', borderWidth: 2.5, pointRadius: 0, fill: false, data: [] },
-{ label: 'Bull Case', borderColor: '#4ade80', borderWidth: 2, pointRadius: 0, fill: false, data: [] }
-]
-},
-options: {
-responsive: true,
-maintainAspectRatio: false,
-interaction: { mode: 'index', intersect: false },
-scales: {
-x: {
-grid: { color: '#33415540' },
-ticks: { color: '#94a3b8', maxTicksLimit: 12 }
-},
-y: {
-grid: { color: '#33415540' },
-ticks: {
-color: '#94a3b8',
-callback: val => '€' + (val >= 1e6 ? (val / 1e6).toFixed(1) + 'M' : Math.round(val / 1e3) + 'k')
-},
-min: 0
-}
-},
-plugins: {
-legend: { labels: { color: '#f8fafc', font: { size: 12 } } },
-tooltip: {
-callbacks: {
-label: ctx => `${ctx.dataset.label}: €${Math.round(ctx.raw).toLocaleString('de-DE')}`
-}
-}
-}
-}
+const labelsContainer = document.getElementById('labels');
+const labelElements = labelData.map(item => {
+  const el = document.createElement('div');
+  el.className = 'label';
+  el.textContent = item.text;
+  labelsContainer.appendChild(el);
+  return { el, pos: item.pos };
 });
 
-function calculateCurve(grossRate, p) {
-const netNominal = (grossRate / 100) * (1 - p.taxRate / 100);
-const r = Math.max(0.001, netNominal - (p.inflation / 100));
-const accumYears = Math.max(1, p.retireAge - startAge);
-const realDebt = 182000 / Math.pow(1 + p.inflation / 100, payoffElapsedYears);
-const grossSale = realDebt * (1 + (p.taxRate / 100) * 0.25);
-const discountYears = Math.max(67 - startAge, p.retireAge - startAge);
-const realPensionAt67 = p.annualPension / Math.pow(1 + p.inflation / 100, discountYears);
+let showLabels = true;
+document.getElementById('toggleLabelsBtn').addEventListener('click', () => {
+  showLabels = !showLabels;
+  labelsContainer.style.display = showLabels ? 'block' : 'none';
+});
 
-let bal = initialBalance;
-const trajectory = [bal];
+let hammerThrown = false;
+let hammerProgress = 0;
+document.getElementById('throwBtn').addEventListener('click', () => {
+  if (!hammerThrown) {
+    hammerThrown = true;
+    hammerProgress = 0;
+  }
+});
 
-for (let t = 1; t <= totalHorizonYears; t++) {
-const age = startAge + t;
-if (t <= accumYears) {
-const currentMonthly = (t > payoffElapsedYears && p.payMortgage === 1) ? p.postSavings : p.monthlySavings;
-bal = bal * (1 + r) + currentMonthly * 12;
-if (t === payoffElapsedYears && p.payMortgage === 1) {
-bal = Math.max(0, bal - grossSale);
-}
-} else {
-const pensionIncome = age >= 67 ? realPensionAt67 : 0;
-const netWithdrawal = Math.max(0, p.monthlyDraw * 12 - pensionIncome);
-bal = Math.max(0, bal * (1 + r) - netWithdrawal);
-}
-trajectory.push(bal);
-}
-return trajectory;
-}
+const clock = new THREE.Clock();
 
-function update() {
-const p = {
-retireAge: parseInt(document.getElementById('retireAge').value),
-monthlyDraw: parseInt(document.getElementById('monthlyDraw').value),
-monthlySavings: parseInt(document.getElementById('monthlySavings').value),
-payMortgage: parseInt(document.getElementById('payMortgage').value),
-postSavings: parseInt(document.getElementById('postSavings').value),
-annualPension: parseInt(document.getElementById('annualPension').value),
-taxRate: parseFloat(document.getElementById('taxRate').value),
-inflation: parseFloat(document.getElementById('inflation').value),
-rCons: parseFloat(document.getElementById('rCons').value),
-rBase: parseFloat(document.getElementById('rBase').value),
-rBull: parseFloat(document.getElementById('rBull').value)
-};
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
 
-document.getElementById('valRetireAge').textContent = p.retireAge;
-document.getElementById('valMonthlyDraw').textContent = '€' + p.monthlyDraw.toLocaleString('de-DE');
-document.getElementById('valMonthlySavings').textContent = '€' + p.monthlySavings.toLocaleString('de-DE');
-document.getElementById('valPayMortgage').textContent = p.payMortgage === 1 ? 'Yes' : 'No';
-document.getElementById('valPostSavings').textContent = '€' + p.postSavings.toLocaleString('de-DE');
-document.getElementById('valAnnualPension').textContent = '€' + p.annualPension.toLocaleString('de-DE');
-document.getElementById('valTaxRate').textContent = p.taxRate + '%';
-document.getElementById('valInflation').textContent = p.inflation.toFixed(1) + '%';
-document.getElementById('valRCons').textContent = p.rCons.toFixed(1) + '%';
-document.getElementById('valRBase').textContent = p.rBase.toFixed(1) + '%';
-document.getElementById('valRBull').textContent = p.rBull.toFixed(1) + '%';
+  spinDuoGroup.rotation.y = t * 5.0;
+  mageHandGroup.position.y = 10.5 + Math.sin(t * 2.5) * 0.35;
 
-const curveCons = calculateCurve(p.rCons, p);
-const curveBase = calculateCurve(p.rBase, p);
-const curveBull = calculateCurve(p.rBull, p);
+  pylonGroup.children.forEach((p, idx) => {
+    p.position.y = 2.2 + Math.sin(t * 3 + idx) * 0.25;
+    p.rotation.y = t * 1.5;
+  });
 
-chart.data.datasets[0].data = curveCons;
-chart.data.datasets[1].data = curveBase;
-chart.data.datasets[2].data = curveBull;
-chart.update('none');
+  bug1.position.z = 1.4 + Math.sin(t * 2.0) * 0.25;
+  bug2.position.x = 3.2 + Math.cos(t * 2.3) * 0.25;
 
-const peakAgeIdx = p.retireAge - startAge;
-document.getElementById('kpiPeak').textContent = '€' + Math.round(curveBase[peakAgeIdx]).toLocaleString('de-DE');
+  if (hammerThrown) {
+    hammerProgress += 0.035;
+    if (hammerProgress <= 1) {
+      const arc = Math.sin(hammerProgress * Math.PI);
+      warhammerGroup.position.y = 1.5 + hammerProgress * 10.2;
+      warhammerGroup.rotation.x = hammerProgress * 18;
+      fireLight.intensity = 2.2 + arc * 3.0;
+    } else if (hammerProgress <= 2) {
+      const back = 2 - hammerProgress;
+      warhammerGroup.position.y = 1.5 + back * 10.2;
+      warhammerGroup.rotation.x = back * 18;
+    } else {
+      hammerThrown = false;
+      warhammerGroup.position.set(0, 1.5, 1.3);
+      warhammerGroup.rotation.set(0, 0, 0);
+      fireLight.intensity = 2.2;
+    }
+  }
 
-const depConsIdx = curveCons.findIndex((val, idx) => idx > peakAgeIdx && val <= 0);
-document.getElementById('kpiDepCons').textContent = depConsIdx !== -1 ? `Age ${startAge + depConsIdx}` : '> 110';
+  controls.update();
+  renderer.render(scene, camera);
 
-const depBaseIdx = curveBase.findIndex((val, idx) => idx > peakAgeIdx && val <= 0);
-document.getElementById('kpiDepBase').textContent = depBaseIdx !== -1 ? `Age ${startAge + depBaseIdx}` : 'Safe > 110';
-
-const discountYears = Math.max(67 - startAge, p.retireAge - startAge);
-const realPensionMonthly = Math.round((p.annualPension / Math.pow(1 + p.inflation / 100, discountYears)) / 12);
-document.getElementById('kpiPension').textContent = `€${realPensionMonthly.toLocaleString('de-DE')} / mo`;
+  if (showLabels) {
+    labelElements.forEach(item => {
+      const v = item.pos.clone();
+      v.project(camera);
+      if (v.z > 1) {
+        item.el.style.display = 'none';
+      } else {
+        item.el.style.display = 'block';
+        const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-(v.y * 0.5) + 0.5) * window.innerHeight;
+        item.el.style.left = `${x}px`;
+        item.el.style.top = `${y}px`;
+      }
+    });
+  }
 }
 
-elements.forEach(id => document.getElementById(id).addEventListener('input', update));
-update();
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+animate();
 </script>
 </body>
 </html>
